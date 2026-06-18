@@ -13,9 +13,18 @@ const server = http.createServer(app);
 // Mount Socket server
 initSocket(server);
 
-// Start movement simulator job
-startLocationSimulation();
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please stop the other process or change the PORT environment variable.`);
+  } else {
+    console.error('Server error:', error);
+  }
+  process.exit(1);
+});
 
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
+
+  // Start movement simulator job only after the server is running successfully.
+  startLocationSimulation();
 });

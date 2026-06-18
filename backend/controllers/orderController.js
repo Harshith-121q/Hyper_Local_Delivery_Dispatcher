@@ -7,7 +7,7 @@ import Tracking from '../models/Tracking.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import { dispatchOrder } from '../services/dispatcherService.js';
-import { emitToUserRoom } from '../sockets/trackingSocket.js';
+import { emitToUserRoom, emitToOrderRoom } from '../sockets/trackingSocket.js';
 import { calculateDistance, calculateETA } from '../utils/distanceCalculator.js';
 
 export const createOrder = async (req, res, next) => {
@@ -410,7 +410,6 @@ export const getAvailableHubOrders = async (req, res, next) => {
 export const getAvailablePartnerOrders = async (req, res, next) => {
   try {
     const orders = await Order.find({
-      'stages.0.status': 'delivered',
       'stages.1.status': 'pending',
       'stages.1.agentId': null
     })
@@ -550,6 +549,22 @@ export const assignHubDriverOrder = async (req, res, next) => {
       });
     }
 
+    // Notify delivery partners that a new last-mile delivery will be available once the cargo reaches the godown.
+    const deliveryPartners = await User.find({ role: 'delivery_partner' });
+    for (const partner of deliveryPartners) {
+      await Notification.create({
+        recipient: partner._id,
+        orderId: order._id,
+        type: 'next_stage_ready',
+        title: 'Delivery Route Created',
+        message: `Order #${order._id.toString().substring(18)} has been routed to ${godownObj.name}. The doorstep delivery will be available for claim once cargo arrives.`
+      });
+      emitToUserRoom(partner._id.toString(), 'new-notification', {
+        title: 'Delivery Route Created',
+        message: `Order #${order._id.toString().substring(18)} is en-route to ${godownObj.name} and will be available for claim soon.`
+      });
+    }
+
     emitToOrderRoom(order._id, 'order-status-change', {
       orderId: order._id,
       status: order.status,
@@ -571,13 +586,9 @@ export const claimDeliveryPartnerOrder = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    if (order.currentStageIndex !== 1) {
-      return res.status(400).json({ success: false, message: 'Order is not ready for last-mile delivery' });
-    }
-
     const stage2 = order.stages[1];
     if (!stage2 || stage2.status !== 'pending' || stage2.agentId) {
-      return res.status(400).json({ success: false, message: 'Last mile stage is already claimed or not pending' });
+      return res.status(400).json({ success: false, message: 'Order is not ready for shipping or has already been claimed' });
     }
 
     const agent = await Agent.findOne({ email: req.user.email });
@@ -601,12 +612,12 @@ export const claimDeliveryPartnerOrder = async (req, res, next) => {
         recipient: customerUser._id,
         orderId: order._id,
         type: 'customer_delivery_update',
-        title: 'Delivery Partner Assigned',
-        message: `Delivery partner ${agent.name} has claimed your order #${order._id.toString().substring(18)} and is preparing for doorstep delivery.`
+        title: 'Delivery Out for Customer',
+        message: `Delivery partner ${agent.name} has claimed your order #${order._id.toString().substring(18)}. The delivery is out for the customer.`
       });
       emitToUserRoom(customerUser._id.toString(), 'new-notification', {
-        title: 'Delivery Partner Assigned',
-        message: `Delivery partner ${agent.name} has claimed your order and is preparing for doorstep delivery.`
+        title: 'Delivery Out for Customer',
+        message: `Delivery partner ${agent.name} has claimed your order and the delivery is out for the customer.`
       });
     }
 

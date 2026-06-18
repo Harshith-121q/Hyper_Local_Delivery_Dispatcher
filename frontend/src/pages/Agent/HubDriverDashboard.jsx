@@ -69,7 +69,7 @@ const HubDriverDashboard = () => {
     try {
       const res = await orderService.assignHubDriverOrder(orderId, godownId);
       if (res.success) {
-        setMessage(`Order successfully accepted and routed to selected godown!`);
+        setMessage(`Shipping successfully routed to godown. Delivery partners have been notified and will be able to claim the last-mile delivery once cargo arrives.`);
         fetchAvailableWarehouseOrders();
         // Switch back to active jobs so they can accept and drive
         setTimeout(() => {

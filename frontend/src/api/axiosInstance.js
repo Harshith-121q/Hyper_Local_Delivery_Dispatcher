@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') || 'http://localhost:5000';
+const baseURL = `${envBaseUrl}/api`;
+
 const axiosInstance = axios.create({
-  baseURL: 'https://hyper-local-delivery-dispatcher-ppc4.onrender.com',
+  baseURL,
   headers: {
     'Content-Type': 'application/json'
   }

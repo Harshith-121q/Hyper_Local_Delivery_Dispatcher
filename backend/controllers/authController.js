@@ -12,8 +12,15 @@ export const registerUser = async (req, res, next) => {
     const { name, email, password, role, location } = req.body;
     const registerableRoles = ['hub_driver', 'delivery_partner', 'customer'];
     const selectedRole = role || 'customer';
-    const userExists = await User.findOne({ email });
 
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, email, and password are required for registration.'
+      });
+    }
+
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
@@ -21,7 +28,7 @@ export const registerUser = async (req, res, next) => {
     if (!registerableRoles.includes(selectedRole)) {
       return res.status(400).json({
         success: false,
-        message: 'Only Hub Driver and Delivery Partner accounts can be registered here'
+        message: 'Invalid role. Allowed roles: customer, hub_driver, delivery_partner.'
       });
     }
 
@@ -35,7 +42,7 @@ export const registerUser = async (req, res, next) => {
     });
 
     const agentExists = await Agent.findOne({ email });
-    if (!agentExists) {
+    if (['hub_driver', 'delivery_partner'].includes(selectedRole) && !agentExists) {
       await Agent.create({
         name,
         email,

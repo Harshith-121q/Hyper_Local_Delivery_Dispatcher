@@ -14,15 +14,27 @@ import notificationRoutes from './routes/notificationRoutes.js';
 const app = express();
 
 // Middleware
+const allowedOrigins = [
+  'https://hyper-local-delivery-dispatcher-theta.vercel.app',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+];
+
 app.use(cors({
-  origin: "https://hyper-local-delivery-dispatcher-theta.vercel.app",
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS policy: Origin ${origin} is not allowed.`));
+    }
+  },
   credentials: true
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// Route
 app.use('/api/auth', authRoutes);
 app.use('/api/warehouses', warehouseRoutes);
 app.use('/api/godowns', godownRoutes);

@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
+import { AuthContext } from '../../context/AuthContext';
 import AgentDashboard from './AgentDashboard';
 import * as orderService from '../../services/orderService';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+import { io } from 'socket.io-client';
 import { Bike, ClipboardList, HelpCircle, UserCheck } from 'lucide-react';
 
 const DeliveryPartnerDashboard = () => {
@@ -10,6 +12,8 @@ const DeliveryPartnerDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  const { user } = useContext(AuthContext);
 
   const fetchAvailableGodownOrders = useCallback(async () => {
     try {
@@ -32,6 +36,26 @@ const DeliveryPartnerDashboard = () => {
     }
   }, [activeTab, fetchAvailableGodownOrders]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const socket = io('http://localhost:5000');
+
+    socket.on('connect', () => {
+      socket.emit('join-user-room', user._id);
+    });
+
+    socket.on('new-notification', (data) => {
+      if (activeTab === 'browse_godown') {
+        fetchAvailableGodownOrders();
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user, activeTab, fetchAvailableGodownOrders]);
+
   const handleClaimOrder = async (orderId) => {
     setMessage('');
     setError('');
@@ -40,7 +64,7 @@ const DeliveryPartnerDashboard = () => {
     try {
       const res = await orderService.claimDeliveryPartnerOrder(orderId);
       if (res.success) {
-        setMessage(`Success! Last-mile delivery claimed. Redirecting to delivery console...`);
+        setMessage('The delivery is out for the customer.');
         fetchAvailableGodownOrders();
         setTimeout(() => {
           setActiveTab('active_jobs');
