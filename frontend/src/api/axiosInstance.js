@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '');
-const baseURL = envBaseUrl ? `${envBaseUrl}/api` : '/api';
+const renderBaseUrl = 'https://hyper-local-delivery-dispatcher-ppc4.onrender.com';
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') || (import.meta.env.MODE === 'production' ? renderBaseUrl : 'http://localhost:5000');
+const baseURL = `${envBaseUrl}/api`;
 
 const axiosInstance = axios.create({
   baseURL,
