@@ -8,7 +8,8 @@ export const useSocket = (orderId, onLocationUpdate, onStatusChange) => {
     if (!orderId) return;
 
     // Connect to Server
-    socketRef.current = io('http://localhost:5000');
+    const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '') || 'https://hyper-local-delivery-dispatcher-ppc4.onrender.com';
+    socketRef.current = io(socketBaseUrl);
 
     // Join order-specific room
     socketRef.current.emit('join-order-room', orderId);

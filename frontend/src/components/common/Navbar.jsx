@@ -29,7 +29,8 @@ const Navbar = () => {
 
     fetchNotifications();
 
-    const socket = io('http://localhost:5000');
+    const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '') || 'https://hyper-local-delivery-dispatcher-ppc4.onrender.com';
+    const socket = io(socketBaseUrl);
 
     socket.on('connect', () => {
       socket.emit('join-user-room', user._id);
