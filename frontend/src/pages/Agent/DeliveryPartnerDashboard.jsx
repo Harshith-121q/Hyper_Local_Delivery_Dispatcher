@@ -39,7 +39,9 @@ const DeliveryPartnerDashboard = () => {
   useEffect(() => {
     if (!user) return;
 
-    const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '') || window.location.origin;
+    const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '')
+      || import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '')
+      || 'http://localhost:5000';
     const socket = io(socketBaseUrl);
 
     socket.on('connect', () => {

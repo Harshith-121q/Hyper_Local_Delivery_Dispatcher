@@ -7,8 +7,10 @@ export const useSocket = (orderId, onLocationUpdate, onStatusChange) => {
   useEffect(() => {
     if (!orderId) return;
 
-    // Connect to Server
-    const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '') || 'https://hyper-local-delivery-dispatcher-ppc4.onrender.com';
+    // Connect to server using explicit socket env or API host fallback for local development
+    const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '')
+      || import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '')
+      || 'http://localhost:5000';
     socketRef.current = io(socketBaseUrl);
 
     // Join order-specific room

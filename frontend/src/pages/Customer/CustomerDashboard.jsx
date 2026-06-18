@@ -98,24 +98,27 @@ const CustomerDashboard = () => {
       const res = await orderService.getProducts().catch(() => null);
       if (res && res.success && res.products && res.products.length > 0) {
         setProducts(res.products);
-        setSelectedProductId(res.products[0]?._id || '');
-      } else {
-        // Fallback: trigger seed if empty
-        const seedRes = await orderService.seedProducts().catch(() => null);
-        if (seedRes && seedRes.success && seedRes.created) {
-          setProducts(seedRes.created);
-          setSelectedProductId(seedRes.created[0]?._id || '');
-        } else {
-          // Retry fetching after seed
-          const retryRes = await orderService.getProducts().catch(() => null);
-          if (retryRes && retryRes.success && retryRes.products) {
-            setProducts(retryRes.products);
-            setSelectedProductId(retryRes.products[0]?._id || '');
-          }
-        }
+        return;
       }
+
+      if (res && res.success && Array.isArray(res.products) && res.products.length === 0) {
+        setMessage('No products are available. Please ask an admin to seed the product catalog.');
+        setProducts([]);
+        return;
+      }
+
+      if (res && !res.success) {
+        setMessage(res.message || 'Unable to fetch products from the server.');
+        setProducts([]);
+        return;
+      }
+
+      setMessage('Unable to fetch products. Please try again later or ask an admin to seed products.');
+      setProducts([]);
     } catch (err) {
       console.error('Error fetching products:', err);
+      setMessage('Error fetching products. Please try again later.');
+      setProducts([]);
     }
   }, []);
 
@@ -256,7 +259,9 @@ const CustomerDashboard = () => {
             )}
 
             {products.length === 0 ? (
-              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center' }}>No products available. Seeding...</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center' }}>
+                No products available. Ask an admin to seed the product catalog or refresh after the catalog is created.
+              </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {products.map(p => {
