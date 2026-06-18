@@ -30,9 +30,8 @@ const Navbar = () => {
     fetchNotifications();
 
     const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '')
-      || import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '')
-      || 'http://localhost:5000';
-    const socket = io(socketBaseUrl);
+      || import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '');
+    const socket = socketBaseUrl ? io(socketBaseUrl) : io();
 
     socket.on('connect', () => {
       socket.emit('join-user-room', user._id);

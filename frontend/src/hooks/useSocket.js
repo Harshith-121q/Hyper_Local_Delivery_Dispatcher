@@ -7,11 +7,10 @@ export const useSocket = (orderId, onLocationUpdate, onStatusChange) => {
   useEffect(() => {
     if (!orderId) return;
 
-    // Connect to server using explicit socket env or API host fallback for local development
+    // Connect to server with either socket URL or API base URL.
     const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '')
-      || import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '')
-      || 'http://localhost:5000';
-    socketRef.current = io(socketBaseUrl);
+      || import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '');
+    socketRef.current = socketBaseUrl ? io(socketBaseUrl) : io();
 
     // Join order-specific room
     socketRef.current.emit('join-order-room', orderId);
