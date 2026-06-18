@@ -74,22 +74,34 @@ export const loginUser = async (req, res, next) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
-    if (user && (await user.matchPassword(password))) {
-      res.json({
-        success: true,
-        token: generateToken(user._id),
-        user: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          location: user.location,
-          address: user.address
-        }
-      });
-    } else {
-      res.status(401).json({ success: false, message: 'Invalid email or password' });
+    if (!email || !password) {
+      console.warn('[Auth] Login failed: missing email or password', { email, hasPassword: Boolean(password) });
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
+
+    if (!user) {
+      console.warn('[Auth] Login failed: user not found', { email });
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      console.warn('[Auth] Login failed: wrong password', { email });
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    res.json({
+      success: true,
+      token: generateToken(user._id),
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        location: user.location,
+        address: user.address
+      }
+    });
   } catch (error) {
     next(error);
   }
