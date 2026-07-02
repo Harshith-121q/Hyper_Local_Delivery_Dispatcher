@@ -3,6 +3,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { Truck, LogOut, User, MapPin, Loader2, CheckCircle, Bell, Check } from 'lucide-react';
 import LocationPickerModal from './LocationPickerModal';
 import { io } from 'socket.io-client';
+import { SOCKET_BASE_URL } from '../../config/apiConfig.js';
 import * as notificationService from '../../services/notificationService';
 
 const Navbar = () => {
@@ -29,9 +30,7 @@ const Navbar = () => {
 
     fetchNotifications();
 
-    const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '')
-      || import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '');
-    const socket = socketBaseUrl ? io(socketBaseUrl) : io();
+    const socket = io(SOCKET_BASE_URL);
 
     socket.on('connect', () => {
       socket.emit('join-user-room', user._id);

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { SOCKET_BASE_URL } from '../config/apiConfig.js';
 
 export const useSocket = (orderId, onLocationUpdate, onStatusChange) => {
   const socketRef = useRef(null);
@@ -7,10 +8,7 @@ export const useSocket = (orderId, onLocationUpdate, onStatusChange) => {
   useEffect(() => {
     if (!orderId) return;
 
-    // Connect to server with either socket URL or API base URL.
-    const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '')
-      || import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '');
-    socketRef.current = socketBaseUrl ? io(socketBaseUrl) : io();
+    socketRef.current = io(SOCKET_BASE_URL);
 
     // Join order-specific room
     socketRef.current.emit('join-order-room', orderId);

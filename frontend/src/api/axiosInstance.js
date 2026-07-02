@@ -1,10 +1,7 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../config/apiConfig.js';
 
-// Prefer an explicit VITE_API_BASE_URL if provided; otherwise use localhost for now.
-// This ensures the frontend talks to your local backend during development/testing
-// and avoids calling the deployed Render URL unless you set the env var.
-const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') || 'https://hyper-local-delivery-dispatcher-ppc4.onrender.com';
-const baseURL = `${envBaseUrl}/api`;
+const baseURL = `${API_BASE_URL}/api`;
 
 const axiosInstance = axios.create({
   baseURL,

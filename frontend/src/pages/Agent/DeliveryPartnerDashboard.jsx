@@ -4,6 +4,7 @@ import AgentDashboard from './AgentDashboard';
 import * as orderService from '../../services/orderService';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { io } from 'socket.io-client';
+import { SOCKET_BASE_URL } from '../../config/apiConfig.js';
 import { Bike, ClipboardList, HelpCircle, UserCheck } from 'lucide-react';
 
 const DeliveryPartnerDashboard = () => {
@@ -39,9 +40,7 @@ const DeliveryPartnerDashboard = () => {
   useEffect(() => {
     if (!user) return;
 
-    const socketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL?.replace(/\/+$/, '')
-      || import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '');
-    const socket = socketBaseUrl ? io(socketBaseUrl) : io();
+    const socket = io(SOCKET_BASE_URL);
 
     socket.on('connect', () => {
       socket.emit('join-user-room', user._id);
