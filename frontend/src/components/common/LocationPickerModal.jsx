@@ -95,6 +95,10 @@ const LocationPickerModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!isOpen) return;
 
+    setLoadError(false);
+    setApiMessage('');
+    setGoogleLoaded(false);
+
     if (window.google && window.google.maps) {
       setGoogleLoaded(true);
       return;
@@ -102,6 +106,27 @@ const LocationPickerModal = ({ isOpen, onClose }) => {
 
     const scriptId = 'google-maps-api-script';
     let script = document.getElementById(scriptId);
+    let checkInterval = null;
+    let timeout = null;
+
+    const cleanup = () => {
+      if (checkInterval) clearInterval(checkInterval);
+      if (timeout) clearTimeout(timeout);
+    };
+
+    const onLoadSuccess = () => {
+      if (window.google && window.google.maps) {
+        setGoogleLoaded(true);
+      } else {
+        setLoadError(true);
+        setApiMessage('Google Maps loaded but did not initialize. Check your API key and browser console for more details.');
+      }
+    };
+
+    const onLoadError = () => {
+      setLoadError(true);
+      setApiMessage('Failed to load Google Maps. Please check your API key and billing settings.');
+    };
 
     if (!script) {
       if (!GOOGLE_MAPS_API_KEY) {
@@ -116,31 +141,28 @@ const LocationPickerModal = ({ isOpen, onClose }) => {
       script.async = true;
       script.defer = true;
 
-      script.onload = () => {
-        setGoogleLoaded(true);
-      };
-
-      script.onerror = () => {
-        setLoadError(true);
-        setApiMessage('Failed to load Google Maps. Please check your API key and billing settings.');
-      };
+      script.onload = onLoadSuccess;
+      script.onerror = onLoadError;
 
       document.head.appendChild(script);
     } else {
-      // Script is already added, wait for load
-      const checkInterval = setInterval(() => {
+      checkInterval = setInterval(() => {
         if (window.google && window.google.maps) {
           setGoogleLoaded(true);
-          clearInterval(checkInterval);
+          cleanup();
         }
       }, 200);
 
-      // Timeout after 8 seconds
-      setTimeout(() => {
-        clearInterval(checkInterval);
-        if (!window.google) setLoadError(true);
+      timeout = setTimeout(() => {
+        cleanup();
+        if (!window.google || !window.google.maps) {
+          setLoadError(true);
+          setApiMessage('Google Maps could not initialize. Check your API key and browser console for details.');
+        }
       }, 8000);
     }
+
+    return cleanup;
   }, [isOpen]);
 
   // Initialize Map

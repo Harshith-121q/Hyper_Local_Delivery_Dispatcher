@@ -7,11 +7,28 @@ const generateToken = (id) => {
   return jwt.sign({ id }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
 };
 
+const normalizeEmail = (email) => {
+  if (typeof email !== 'string') return '';
+  return email.trim().toLowerCase();
+};
+
+const normalizeName = (name) => {
+  if (typeof name !== 'string') return '';
+  return name.trim();
+};
+
+const escapeRegExp = (value) => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
 export const registerUser = async (req, res, next) => {
   try {
-    const { name, email, password, role, location } = req.body;
+    let { name, email, password, role, location } = req.body;
     const registerableRoles = ['hub_driver', 'delivery_partner', 'customer'];
-    const selectedRole = role || 'customer';
+    const selectedRole = normalizeName(role || 'customer');
+
+    name = normalizeName(name);
+    email = normalizeEmail(email);
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -20,7 +37,7 @@ export const registerUser = async (req, res, next) => {
       });
     }
 
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email: { $regex: `^${escapeRegExp(email)}$`, $options: 'i' } });
     if (userExists) {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
@@ -41,7 +58,7 @@ export const registerUser = async (req, res, next) => {
       address: ''
     });
 
-    const agentExists = await Agent.findOne({ email });
+    const agentExists = await Agent.findOne({ email: { $regex: `^${escapeRegExp(email)}$`, $options: 'i' } });
     if (['hub_driver', 'delivery_partner'].includes(selectedRole) && !agentExists) {
       await Agent.create({
         name,
@@ -65,19 +82,24 @@ export const registerUser = async (req, res, next) => {
       }
     });
   } catch (error) {
+    if (error?.code === 11000 && error?.keyPattern?.email) {
+      return res.status(400).json({ success: false, message: 'A user with that email already exists.' });
+    }
     next(error);
   }
 };
 
 export const loginUser = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    let { email, password } = req.body;
+    email = normalizeEmail(email);
 
     if (!email || !password) {
       console.warn('[Auth] Login failed: missing email or password', { email, hasPassword: Boolean(password) });
       return res.status(400).json({ success: false, message: 'Email and password are required' });
     }
+
+    const user = await User.findOne({ email: { $regex: `^${escapeRegExp(email)}$`, $options: 'i' } });
 
     if (!user) {
       console.warn('[Auth] Login failed: user not found', { email });
@@ -136,7 +158,7 @@ export const updateMyLocation = async (req, res, next) => {
     }
 
     await Agent.findOneAndUpdate(
-      { email: user.email },
+      { email: { $regex: `^${escapeRegExp(user.email)}$`, $options: 'i' } },
       { currentLocation: { lat, lng } },
       { new: true }
     );

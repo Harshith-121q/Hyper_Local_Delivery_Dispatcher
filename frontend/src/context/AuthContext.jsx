@@ -33,7 +33,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await axiosInstance.post('/auth/login', { email, password });
+      const normalizedEmail = email?.trim().toLowerCase();
+      const res = await axiosInstance.post('/auth/login', { email: normalizedEmail, password });
       if (res.data.success) {
         localStorage.setItem('token', res.data.token);
         setUser(res.data.user);
@@ -50,9 +51,11 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password, role) => {
     try {
+      const normalizedEmail = email?.trim().toLowerCase();
+      const normalizedName = name?.trim();
       const res = await axiosInstance.post('/auth/register', {
-        name,
-        email,
+        name: normalizedName,
+        email: normalizedEmail,
         password,
         role
       });
