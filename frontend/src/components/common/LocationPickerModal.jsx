@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 import { X, MapPin, Navigation, Search, Loader2 } from 'lucide-react';
+import { GOOGLE_MAPS_API_KEY } from '../../config/googleConfig.js';
 
 const DARK_MAP_STYLES = [
   { elementType: 'geometry', stylers: [{ color: '#18181b' }] },
@@ -103,19 +104,25 @@ const LocationPickerModal = ({ isOpen, onClose }) => {
     let script = document.getElementById(scriptId);
 
     if (!script) {
+      if (!GOOGLE_MAPS_API_KEY) {
+        setLoadError(true);
+        setApiMessage('Google Maps API key is not configured. Set VITE_GOOGLE_MAPS_API_KEY in your frontend environment.');
+        return;
+      }
+
       script = document.createElement('script');
       script.id = scriptId;
-      // Note: We use empty key for developers mode. User can replace if they have an API key.
-      script.src = `https://maps.googleapis.com/maps/api/js?libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?libraries=places&key=${GOOGLE_MAPS_API_KEY}`;
       script.async = true;
       script.defer = true;
-      
+
       script.onload = () => {
         setGoogleLoaded(true);
       };
-      
+
       script.onerror = () => {
         setLoadError(true);
+        setApiMessage('Failed to load Google Maps. Please check your API key and billing settings.');
       };
 
       document.head.appendChild(script);
